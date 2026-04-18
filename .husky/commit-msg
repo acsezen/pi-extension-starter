@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+set -eu
+
+if [ "${1:-}" = "" ]; then
+  echo "commit-msg: missing commit message file argument." >&2
+  exit 1
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "commit-msg: node was not found in PATH." >&2
+  echo "If you use a Node version manager, expose it in ~/.config/husky/init.sh so Git hooks use your own Node." >&2
+  exit 127
+fi
+
+if ! command -v npx >/dev/null 2>&1; then
+  echo "commit-msg: npx was not found in PATH." >&2
+  echo "Install npm, or expose it in ~/.config/husky/init.sh for Git hooks." >&2
+  exit 127
+fi
+
+exec npx --no -- commitlint --edit "$1"

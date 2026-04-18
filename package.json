@@ -1,0 +1,79 @@
+{
+	"name": "pi-extension-starter",
+	"version": "0.1.0",
+	"description": "Starter template for building, testing, and publishing Pi extensions as npm packages.",
+	"type": "module",
+	"main": "./src/index.ts",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"files": [
+		"src",
+		"docs",
+		"AGENTS.md",
+		"README.md",
+		"CHANGELOG.md",
+		"LICENSE"
+	],
+	"scripts": {
+		"typecheck": "tsc --noEmit -p tsconfig.json",
+		"lint": "biome lint . --error-on-warnings",
+		"format": "biome format --write .",
+		"format:check": "biome format .",
+		"test": "node --import=tsx --test ./test/*.test.ts",
+		"pack:check": "npm pack --dry-run",
+		"check": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run pack:check",
+		"changelog": "node ./scripts/generate-changelog.mjs full",
+		"changelog:release": "node ./scripts/generate-changelog.mjs release",
+		"prepublishOnly": "npm run check",
+		"prepare": "node ./scripts/prepare-husky.mjs"
+	},
+	"keywords": [
+		"pi-package",
+		"pi-extension",
+		"pi-coding-agent",
+		"pi",
+		"starter",
+		"template"
+	],
+	"author": "Your Name",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/your-org/pi-extension-starter.git"
+	},
+	"bugs": {
+		"url": "https://github.com/your-org/pi-extension-starter/issues"
+	},
+	"homepage": "https://github.com/your-org/pi-extension-starter#readme",
+	"engines": {
+		"node": ">=20.6.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"pi": {
+		"extensions": [
+			"./src/index.ts"
+		]
+	},
+	"peerDependencies": {
+		"@mariozechner/pi-coding-agent": "*",
+		"@mariozechner/pi-tui": "*",
+		"@sinclair/typebox": "*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.12",
+		"@commitlint/cli": "^20.5.0",
+		"@commitlint/config-conventional": "^20.5.0",
+		"@mariozechner/pi-coding-agent": "^0.67.68",
+		"@mariozechner/pi-tui": "^0.67.68",
+		"@sinclair/typebox": "^0.34.49",
+		"@types/node": "^25.6.0",
+		"conventional-changelog": "^7.2.0",
+		"conventional-changelog-conventionalcommits": "^9.3.1",
+		"husky": "^9.1.7",
+		"tsx": "^4.21.0",
+		"typescript": "^6.0.3"
+	}
+}

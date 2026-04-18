@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+set -eu
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "pre-commit: node was not found in PATH." >&2
+  echo "If you use a Node version manager, expose it in ~/.config/husky/init.sh so Git hooks use your own Node." >&2
+  exit 127
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "pre-commit: npm was not found in PATH." >&2
+  echo "Install npm, or expose it in ~/.config/husky/init.sh for Git hooks." >&2
+  exit 127
+fi
+
+exec npm run check
