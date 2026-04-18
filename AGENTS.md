@@ -42,6 +42,8 @@ The `docs/pi-guide-*.md` guides were derived from the official `pi` materials in
 - After changes that are not documentation-only, run `npm run check`.
 - To validate the real extension flow, also use `pi -e ./src/index.ts`.
 - Before publishing, confirm `npm run pack:check`.
+- Keep repository text files normalized to LF via `.gitattributes` so `biome format` and Git hooks behave consistently across platforms.
+- Never bypass Git hooks with `git commit --no-verify`. If a commit is blocked by hooks, fix the underlying issue or ask the user how to proceed instead of skipping validation.
 
 ## Delivery
 
