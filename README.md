@@ -15,7 +15,7 @@ This template follows the current `pi` docs model:
 - `src/index.ts` entrypoint with one command, one tool, and one custom message renderer
 - `test/index.test.ts` covering registration, command output, and tool execution
 - `AGENTS.md` with repo-specific instructions for agents working on Pi extensions
-- `docs/pi-extension-authoring-guide.md` summarizing the recommended authoring model from the official Pi docs and examples
+- `docs/pi-guide-1-base.md`, `docs/pi-guide-2-runtime.md`, and `docs/pi-guide-3-release.md` summarizing the recommended authoring model from the official Pi docs and examples
 - `.husky` hooks for `pre-commit` and `commit-msg`
 - `commitlint` configured for Conventional Commits
 - `.github/workflows/ci.yml` and `.github/workflows/cd.yml`
@@ -60,7 +60,9 @@ This template follows the current `pi` docs model:
 This starter now includes an explicit authoring guide for agents and maintainers:
 
 - `AGENTS.md`
-- `docs/pi-extension-authoring-guide.md`
+- `docs/pi-guide-1-base.md`
+- `docs/pi-guide-2-runtime.md`
+- `docs/pi-guide-3-release.md`
 
 Use those files as the local implementation contract when evolving the extension.
 They were derived from the official Pi sources in:

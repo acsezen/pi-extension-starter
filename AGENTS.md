@@ -1,20 +1,20 @@
 # AGENTS
 
-Sempre responda em Português do Brasil.
-
 ## Objetivo
 
 Este repositório é um starter para criar extensões do `pi` como pacotes npm source-first.
 
 Ao implementar novas funcionalidades aqui, trate os seguintes materiais como fonte de verdade:
 
-- `docs/pi-extension-authoring-guide.md`
+- `docs/pi-guide-1-base.md`
+- `docs/pi-guide-2-runtime.md`
+- `docs/pi-guide-3-release.md`
 - `README.md`
 - `src/index.ts`
 - `src/tools/starter-tool.ts`
 - `src/commands/starter-command.ts`
 
-O guia em `docs/pi-extension-authoring-guide.md` foi derivado dos materiais oficiais do `pi` em:
+Os guias `docs/pi-guide-*.md` foram derivados dos materiais oficiais do `pi` em:
 
 - `packages/coding-agent/docs/extensions.md`
 - `packages/coding-agent/docs/packages.md`
@@ -40,4 +40,4 @@ O guia em `docs/pi-extension-authoring-guide.md` foi derivado dos materiais ofic
 ## Entrega
 
 - Atualize `README.md` quando a API pública da extensão mudar.
-- Atualize `docs/pi-extension-authoring-guide.md` quando novas decisões de arquitetura ou padrões do `pi` forem incorporados ao starter.
+- Atualize `docs/pi-guide-*.md` quando novas decisões de arquitetura ou padrões do `pi` forem incorporados ao starter.
