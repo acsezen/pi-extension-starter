@@ -1,39 +1,55 @@
-# Guia de Criação de Extensões do Pi: Fundamentos
+# Guia de Criacao de Extensoes do Pi: Fundamentos
 
-Este guia existe para orientar agentes e mantenedores deste starter a criarem extensões do `pi` da forma recomendada pela documentação e pelos exemplos reais do projeto.
+Este guia existe para orientar agentes e mantenedores deste starter a criarem extensoes do `pi` da forma recomendada pela documentacao e pelos exemplos reais do projeto.
 
-## Escopo da Série
+## Escopo da serie
 
-Este material foi dividido em 3 arquivos para manter a leitura mais direta:
+Este material foi dividido em 3 arquivos:
 
 - `docs/pi-guide-1-base.md`
 - `docs/pi-guide-2-runtime.md`
 - `docs/pi-guide-3-release.md`
 
-## Fontes de Verdade
+## Fontes de verdade
 
 Este documento foi consolidado a partir de:
 
 - `packages/coding-agent/docs/extensions.md`
 - `packages/coding-agent/docs/packages.md`
 - `packages/coding-agent/examples/extensions/README.md`
-- Exemplos canônicos:
+- exemplos canonicamente uteis:
   - `packages/coding-agent/examples/extensions/hello.ts`
-  - `packages/coding-agent/examples/extensions/message-renderer.ts`
-  - `packages/coding-agent/examples/extensions/dynamic-tools.ts`
   - `packages/coding-agent/examples/extensions/todo.ts`
-  - `packages/coding-agent/examples/extensions/with-deps/package.json`
+  - `packages/coding-agent/examples/extensions/tools.ts`
+  - `packages/coding-agent/examples/extensions/status-line.ts`
+  - `packages/coding-agent/examples/extensions/custom-footer.ts`
+  - `packages/coding-agent/examples/extensions/model-status.ts`
 
-Quando houver conflito, priorize primeiro os docs oficiais `extensions.md` e `packages.md`, depois os exemplos.
+Quando houver conflito, priorize primeiro `extensions.md` e `packages.md`, depois os exemplos.
 
-## Modelo Recomendado
+## Perfis recomendados
 
-- Extensões do `pi` são módulos TypeScript carregados diretamente pelo runtime.
-- O formato recomendado para distribuição é um pacote npm ou git com manifesto `pi` em `package.json`.
-- O pacote deve ser source-first: o `pi` consegue carregar `.ts` via `jiti`, então não existe necessidade de compilar para `dist/` só para execução normal.
-- O entrypoint deve ser exposto em `package.json > pi.extensions`.
+Os exemplos oficiais do `pi` mostram dois perfis comuns:
 
-Exemplo mínimo de manifesto:
+1. `minimal`
+   - extensoes pequenas
+   - normalmente um unico tool ou hook
+   - inspiracao principal: `hello.ts`
+
+2. `stateful-ui`
+   - extensoes com command, configuracao, estado, UI e reidratacao
+   - inspiracao principal: `tools.ts`, `todo.ts`, `status-line.ts`, `custom-footer.ts`
+
+Este repositorio usa `stateful-ui` como baseline do starter principal.
+
+## Modelo recomendado
+
+- extensoes do `pi` sao modulos TypeScript carregados diretamente pelo runtime
+- o formato recomendado para distribuicao e um pacote npm ou git com manifesto `pi` em `package.json`
+- o pacote deve permanecer source-first
+- o entrypoint principal deve continuar em `package.json > pi.extensions`
+
+Exemplo minimo:
 
 ```json
 {
@@ -45,52 +61,67 @@ Exemplo mínimo de manifesto:
 }
 ```
 
-## Estrutura Recomendada
+## Estrutura recomendada
 
-Para extensões pequenas:
+Para extensoes pequenas:
 
 ```text
 src/
   index.ts
 ```
 
-Para extensões reais e evolutivas, prefira:
+Para extensoes reais e evolutivas:
 
 ```text
 src/
   index.ts
   commands/
+  state/
   tools/
-  utils/
+  ui/
   types.ts
 test/
+  helpers/
 docs/
 ```
 
-Regras práticas:
+No starter atual, a estrutura recomendada ja aparece de forma concreta:
 
-- `src/index.ts` deve apenas compor registros, não concentrar toda a lógica.
-- `commands/` para slash commands.
-- `tools/` para tools da LLM.
-- `types.ts` para ids públicos, tipos de `details` e contratos compartilhados.
-- `test/` para validar registro e comportamento.
+```text
+src/
+  index.ts
+  commands/settings-command.ts
+  state/session-state.ts
+  tools/starter-checklist-tool.ts
+  ui/footer.ts
+  ui/settings-panel.ts
+  types.ts
+```
 
-## Como Escrever a Extensão
+Regras praticas:
 
-Toda extensão exporta uma função default que recebe `ExtensionAPI`.
+- `src/index.ts` deve compor o registro da extensao, nao concentrar a logica inteira
+- `commands/` para slash commands
+- `state/` para reidratacao, persistencia e estado em memoria
+- `tools/` para tools reutilizaveis e testaveis
+- `ui/` para renderizacao interativa, footer, status e componentes auxiliares
+- `types.ts` para ids publicos, defaults e contratos compartilhados
+- `test/helpers/` para mocks de `ExtensionAPI`, contexto, `sessionManager` e footer
 
-Padrão recomendado:
+## Como escrever a extensao
+
+Toda extensao exporta uma funcao default que recebe `ExtensionAPI`.
+
+Padrao recomendado:
 
 ```ts
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { myTool } from "./tools/my-tool.js";
 
 export default function myExtension(pi: ExtensionAPI): void {
-  pi.registerTool(myTool);
-  pi.registerCommand("my-command", {
-    description: "Describe the command",
-    handler: async (args, ctx) => {
-      ctx.ui.notify(args || "ok", "info");
+  pi.registerCommand("my-settings", {
+    description: "Open settings",
+    handler: async (_args, ctx) => {
+      ctx.ui.notify("ok", "info");
     },
   });
 }
@@ -98,14 +129,15 @@ export default function myExtension(pi: ExtensionAPI): void {
 
 ## Tools
 
-### Padrão preferido
+### Padrao preferido
 
-Prefira `defineTool()` para tools declarados fora de `registerTool()`. Isso preserva inferência de tipos, facilita teste unitário e reutilização.
+Prefira `defineTool()` para tools declarados fora de `registerTool()`. Isso preserva inferencia de tipos, facilita teste unitario e reutilizacao.
 
-Exemplo real de referência: `hello.ts`.
+Exemplo de referencia: `hello.ts`.
 
 ```ts
 import { defineTool } from "@mariozechner/pi-coding-agent";
+import { StringEnum } from "@mariozechner/pi-ai";
 import { Type } from "@sinclair/typebox";
 
 export const myTool = defineTool({
@@ -113,12 +145,15 @@ export const myTool = defineTool({
   label: "My Tool",
   description: "Does something useful",
   parameters: Type.Object({
-    text: Type.String({ description: "Input text" }),
+    action: StringEnum(["list", "add"] as const, {
+      description: "Operation to perform",
+    }),
+    text: Type.Optional(Type.String()),
   }),
-  async execute(_toolCallId, params) {
+  async execute() {
     return {
-      content: [{ type: "text", text: params.text }],
-      details: { echoed: params.text },
+      content: [{ type: "text", text: "ok" }],
+      details: { saved: true },
     };
   },
 });
@@ -126,29 +161,35 @@ export const myTool = defineTool({
 
 ### Schemas
 
-- Use `@sinclair/typebox` para schemas.
-- Para enums de string, prefira `StringEnum` de `@mariozechner/pi-ai` quando isso importar para compatibilidade com providers Google.
-- Evite `Type.Union([Type.Literal(...)])` para enums de string quando `StringEnum` resolver.
-
-### `details`
-
-Use `details` para:
-
-- estado persistente do resultado
-- dados usados por renderização customizada
-- reconstrução de estado após `session_start`, `session_tree` ou `fork`
-
-Não use `details` apenas como dump arbitrário. Estruture e tipifique o contrato.
+- use `@sinclair/typebox` para schemas
+- para enums de string, prefira `StringEnum` de `@mariozechner/pi-ai`
+- evite unions manuais de literais quando `StringEnum` resolver o caso
 
 ## Commands
 
-Padrão recomendado:
+Padrao recomendado:
 
-- Registrar via `pi.registerCommand("nome", { description, handler })`
-- Fazer parsing de `args` de forma explícita
-- Emitir feedback ao usuário via `ctx.ui.notify()`, `ctx.ui.custom()` ou `pi.sendMessage()`
+- registrar via `pi.registerCommand("nome", { description, handler })`
+- manter parsing de `args` explicito
+- usar `ctx.ui.custom()` quando precisar de interacao rica
+- usar `ctx.ui.notify()` para feedback leve
 
-Exemplo útil de referência:
+No starter atual, o command principal abre um `SettingsList` e persiste configuracoes com atualizacao imediata.
 
-- `message-renderer.ts` para command que dispara custom message
-- `dynamic-tools.ts` para command que altera runtime
+## Estado
+
+Use dois canais diferentes, cada um com uma responsabilidade:
+
+1. `pi.appendEntry()`
+   - metadados de sessao
+   - preferencias do usuario
+   - configuracoes que nao dependem do resultado de um tool especifico
+
+2. `details` de tool results
+   - estado que precisa seguir corretamente o branch atual
+   - dados de renderizacao e reidratacao ligados ao historico da tool
+
+O starter atual usa exatamente essa divisao:
+
+- configuracao da UI em `appendEntry()`
+- checklist do tool em `details`

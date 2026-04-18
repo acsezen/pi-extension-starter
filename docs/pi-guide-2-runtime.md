@@ -1,85 +1,142 @@
-# Guia de Criação de Extensões do Pi: Runtime e UI
+# Guia de Criacao de Extensoes do Pi: Runtime e UI
 
-Este é o segundo documento da série:
+Este e o segundo documento da serie:
 
 - `docs/pi-guide-1-base.md`
 - `docs/pi-guide-2-runtime.md`
 - `docs/pi-guide-3-release.md`
 
-## Custom Messages
+## Estado e reconstruicao
 
-Quando a extensão precisa mostrar mensagens próprias na conversa:
+Se o comportamento depende de estado da sessao:
 
-1. Registre um renderer com `pi.registerMessageRenderer(customType, renderer)`.
-2. Envie mensagens com `pi.sendMessage({ customType, content, display, details })`.
+- prefira reconstruir a partir do historico persistido
+- use `session_start` e `session_tree` para reidratacao
+- use `model_select` quando a UI ou o comportamento depender do modelo atual
+- nao confie apenas em variaveis em memoria
 
-Padrão recomendado:
+Exemplos canonicos:
 
-- `customType` constante em `types.ts`
-- `details` tipado
-- renderer compacto por padrão, expandido só quando necessário
+- `todo.ts`
+- `tools.ts`
+- `model-status.ts`
 
-Exemplo canônico: `message-renderer.ts`.
+No starter atual:
 
-## Estado e Reconstrução
+- `src/state/session-state.ts` reidrata configuracao de sessao a partir de `appendEntry()`
+- o mesmo modulo reconstroi o checklist a partir de `details` de `starter_checklist`
+- `src/index.ts` reaplica UI em `session_start`, `session_tree` e `model_select`
 
-Se o comportamento depende de estado da sessão:
+## `appendEntry()` vs `details`
 
-- prefira reconstruir a partir do histórico persistido
-- use `session_start` e `session_tree` para reidratação
-- persista estado em tool results ou session entries
+Essa diferenca precisa ficar explicita em qualquer extensao stateful:
 
-Exemplo canônico: `todo.ts`.
+### Use `appendEntry()` quando:
 
-Boas práticas:
+- o dado for metadata de sessao
+- a extensao estiver persistindo preferencias do usuario
+- o estado nao precisar ser derivado de um resultado de tool especifico
 
-- não confie apenas em variáveis em memória
-- não grave arquivos locais para estado lógico da sessão, salvo quando isso fizer parte explícita do produto
-- para branching correto, o estado precisa ser derivável do histórico
+### Use `details` quando:
 
-## UI e Interação
+- o estado precisa acompanhar corretamente `fork`, `tree` e branching do historico
+- a renderizacao depende do resultado anterior da tool
+- a extensao precisa reconstruir o estado do branch atual lendo tool results
 
-Use `ctx.ui` quando a extensão precisa interagir com o usuário:
+No starter:
 
-- `notify`
-- `confirm`
-- `select`
-- `input`
-- `editor`
-- `custom`
-- `setStatus`
-- `setWidget`
-- `setFooter`
-- `setEditorComponent`
+- `starter-settings-state` e gravado com `pi.appendEntry()`
+- o checklist do `starter_checklist` vive em `details`
 
-Regras práticas:
+## UI interativa
 
-- sempre cheque `ctx.hasUI` quando a extensão puder rodar fora do modo interativo
-- mantenha o default compacto
-- não dependa de UI para fluxos que também precisem funcionar em `print`, `json` ou `rpc`
+Quando a extensao precisa de um painel focado pelo usuario, o padrao recomendado e:
 
-## Renderização Customizada
+- `ctx.ui.custom()`
+- `SettingsList`
+- `getSettingsListTheme()`
+
+Exemplo canonicamente relevante: `tools.ts`.
+
+No starter atual, `src/ui/settings-panel.ts` demonstra:
+
+- titulo e resumo dinamico
+- `SettingsList` com busca
+- callback de mudanca aplicado imediatamente
+- re-render sem depender de hacks no command handler
+
+## Status e footer
+
+O `pi` oferece dois niveis principais para UI persistente:
+
+### `ctx.ui.setStatus()`
+
+Use para um resumo curto e sempre disponivel.
+
+Bom para:
+
+- estado ativo/inativo
+- modelo atual
+- contadores pequenos
+
+### `ctx.ui.setFooter()`
+
+Use quando a extensao precisa substituir o footer inteiro.
+
+Bom para:
+
+- layout proprio
+- combinar dados de `ctx.sessionManager`, `ctx.model` e `footerData`
+- mostrar branch git e multiplos status ao mesmo tempo
+
+No starter atual, `src/ui/footer.ts` usa os dois:
+
+- `setStatus()` para o resumo compacto
+- `setFooter()` para um footer customizado quando o usuario escolhe esse modo no painel
+
+## Lifecycle minimo recomendado para extensoes stateful-ui
+
+Para extensoes com estado e UI, trate estes hooks como baseline:
+
+1. `session_start`
+   - reidrata estado
+   - reaplica status/footer/widget/header
+
+2. `session_tree`
+   - reidrata estado do branch ativo
+   - reaplica a UI derivada desse branch
+
+3. `model_select`
+   - sincroniza qualquer UI dependente de modelo
+   - em alguns casos, emite notify/status
+
+Esse trio esta presente no starter.
+
+## Renderizacao de tools
 
 Para tools:
 
-- use `renderCall` e `renderResult` quando quiser UX melhor na TUI
-- mantenha o colapsado compacto
-- use `expanded` para detalhes
-- use `isPartial` para progresso streaming
-- só use `renderShell: "self"` quando a moldura padrão realmente atrapalhar
+- use `renderCall()` e `renderResult()` quando a UX da TUI importar
+- mantenha o colapsado curto
+- use `expanded` para detalhar listas maiores
+- evite renderizadores muito verbosos
 
-Para mensagens:
+No starter:
 
-- prefira `Text` simples quando possível
-- use `Box` apenas quando a moldura adicional trouxer valor real
+- `src/tools/starter-checklist-tool.ts` usa `renderCall()` para mostrar acao + argumentos
+- `renderResult()` mostra um resumo enxuto e expande a lista quando necessario
 
-## Quando Consultar Qual Exemplo
+## Testes de runtime
 
-- Tool mínimo: `hello.ts`
-- Custom messages: `message-renderer.ts`
-- Registro dinâmico de tools: `dynamic-tools.ts`
-- Estado persistente e reconstrução: `todo.ts`
-- Dependências próprias: `with-deps/`
-- Segurança e bloqueio de tool calls: `permission-gate.ts`, `protected-paths.ts`
-- UI interativa: `question.ts`, `questionnaire.ts`, `overlay-test.ts`
-- Renderização de tools built-in: `built-in-tool-renderer.ts`, `minimal-mode.ts`
+Como o `pi` nao expoe um kit oficial de mocks para extensoes, o starter inclui helpers base em `test/helpers/`.
+
+Eles cobrem o que normalmente importa validar:
+
+- registro de command/tool/hooks
+- `appendEntry()`
+- `ctx.ui.custom()`
+- `ctx.ui.setStatus()`
+- `ctx.ui.setFooter()`
+- `sessionManager.getBranch()`
+
+Se uma extensao real crescer, prefira evoluir esses helpers em vez de reinventar mocks por pacote.

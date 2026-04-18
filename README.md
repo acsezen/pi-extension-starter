@@ -1,122 +1,160 @@
 # pi-extension-starter
 
-Starter template for building Pi extensions as source-first npm packages.
+Starter template para criar extensoes do `pi` como pacotes npm source-first, agora com um perfil base mais proximo de extensoes reais: estado de sessao, UI interativa, hooks de lifecycle e um tool com `details` branch-aware.
 
-This template follows the current `pi` docs model:
+## O que este starter demonstra
 
-- package distribution via `package.json > pi.extensions`
-- TypeScript source entrypoint loaded directly by Pi
-- local validation with `npm run check`
-- release notes generated with `conventional-changelog`
-- CI/CD for npm publication after successful validation
+- `package.json > pi.extensions` apontando para `./src/index.ts`
+- `src/state/session-state.ts` com persistencia via `pi.appendEntry()`
+- `src/tools/starter-checklist-tool.ts` com `defineTool()` e `details` tipados para reconstruir estado por branch
+- `src/commands/settings-command.ts` com `ctx.ui.custom()` + `SettingsList` + `getSettingsListTheme()`
+- `src/ui/footer.ts` com `ctx.ui.setStatus()` e `ctx.ui.setFooter()`
+- hooks `session_start`, `session_tree` e `model_select`
+- helpers de teste em `test/helpers/`
+- validacao local com `npm run check`
+- release automatizado com `release-please` + publish no npm
 
-## Included
+## Estrutura atual
 
-- `src/index.ts` entrypoint with one command, one tool, and one custom message renderer
-- `test/index.test.ts` covering registration, command output, and tool execution
-- `AGENTS.md` with repo-specific instructions for agents working on Pi extensions
-- `docs/pi-guide-1-base.md`, `docs/pi-guide-2-runtime.md`, and `docs/pi-guide-3-release.md` summarizing the recommended authoring model from the official Pi docs and examples
-- `.husky` hooks for `pre-commit` and `commit-msg`
-- `commitlint` configured for Conventional Commits
-- `.github/workflows/ci.yml` and `.github/workflows/cd.yml`
-- `scripts/generate-changelog.mjs` and `scripts/prepare-husky.mjs`
+```text
+src/
+  index.ts
+  commands/
+    settings-command.ts
+  state/
+    session-state.ts
+  tools/
+    starter-checklist-tool.ts
+  ui/
+    footer.ts
+    settings-panel.ts
+  types.ts
+test/
+  helpers/
+    mock-command-context.ts
+    mock-extension-api.ts
+    mock-extension-context.ts
+    mock-footer-data.ts
+  index.test.ts
+docs/
+  pi-guide-1-base.md
+  pi-guide-2-runtime.md
+  pi-guide-3-release.md
+```
+
+## Comportamento do starter
+
+- Slash command: `/starter-settings`
+- Tool name: `starter_checklist`
+- Session entry type: `starter-settings-state`
+
+O command abre um painel `SettingsList` para alternar configuracoes persistidas.
+O tool mantem um checklist simples e grava o estado em `details`, o que torna a reconstruicao correta em `fork`, `tree` e recarga de sessao.
+Os hooks reaplicam status/footer e sincronizam o estado em memoria quando a sessao muda.
 
 ## Quick Start
 
-1. Rename the package metadata in `package.json`.
-2. Rename the starter constants in `src/types.ts`.
-3. Initialize Git if you have not already:
-
-   ```bash
-   git init
-   ```
-
-4. Install dependencies:
+1. Ajuste os metadados do pacote em `package.json`.
+2. Renomeie os identificadores publicos em `src/types.ts`.
+3. Instale dependencias:
 
    ```bash
    npm install
    ```
 
-5. Validate the template:
+4. Rode a validacao completa:
 
    ```bash
    npm run check
    ```
 
-6. Smoke test the extension with Pi:
+5. Rode um smoke test com o runtime real do `pi`:
 
    ```bash
    pi -e ./src/index.ts
    ```
 
-7. Optional local install as a package:
+6. Opcionalmente teste a instalacao local como pacote:
 
    ```bash
    pi install .
    ```
 
-## Agent Guide
+## Padroes de arquitetura incluidos
 
-This starter now includes an explicit authoring guide for agents and maintainers:
+### 1. Estado de sessao via `appendEntry()`
 
-- `AGENTS.md`
-- `docs/pi-guide-1-base.md`
-- `docs/pi-guide-2-runtime.md`
-- `docs/pi-guide-3-release.md`
+`src/state/session-state.ts` persiste preferencias do usuario como:
 
-Use those files as the local implementation contract when evolving the extension.
-They were derived from the official Pi sources in:
+- modo de workflow
+- modo do footer
+- notificacoes de troca de modelo
 
-- `packages/coding-agent/docs/extensions.md`
-- `packages/coding-agent/docs/packages.md`
-- `packages/coding-agent/examples/extensions/README.md`
+Esses dados sao metadados de sessao. Por isso o starter usa `pi.appendEntry()` e reidrata no `session_start` e no `session_tree`.
 
-## Starter Behavior
+### 2. Estado branch-aware via `details`
 
-- Slash command: `/starter-about`
-- Tool name: `starter_echo`
-- Custom message type: `starter-info`
+`src/tools/starter-checklist-tool.ts` devolve `details` estruturados em cada resultado.
+O starter usa esse historico para reconstruir o checklist do branch atual, sem depender de estado solto de processo.
 
-Rename those three identifiers before publishing your real package.
+### 3. UI interativa oficial
 
-## Release Flow
+`src/commands/settings-command.ts` abre um painel com:
 
-The included CD workflow follows the same style used in `pi-tool-view`:
+- `ctx.ui.custom()`
+- `SettingsList`
+- `getSettingsListTheme()`
+- atualizacao imediata ao alternar opcoes
 
-- CI runs on pushes and pull requests to `main` and `master`.
-- CD only runs after CI succeeds for a direct push to `main` or `master`.
-- The head commit message must contain the standalone word `release`.
-- CD bumps `patch`, updates `CHANGELOG.md`, publishes to npm, tags the release, and creates a GitHub Release.
+### 4. Lifecycle explicito
 
-If the same commit message also contains the standalone word `test`, the workflow publishes a test build with the npm tag `test` instead of creating a normal release.
+`src/index.ts` registra:
 
-Example release commit message:
+- `session_start`
+- `session_tree`
+- `model_select`
 
-```text
-chore: release starter package
-```
+Isso mostra como reaplicar comportamento depois de reload, branch navigation e troca de modelo.
 
-Example test publish commit message:
+### 5. Status e footer
 
-```text
-chore: release test candidate
-```
+`src/ui/footer.ts` demonstra:
 
-## Changelog
+- `ctx.ui.setStatus()` para status compacto e persistente
+- `ctx.ui.setFooter()` para um footer customizado que usa `footerData`
 
-Generate or refresh the changelog from Conventional Commits:
+## Testes incluidos
+
+O starter agora inclui mocks reutilizaveis para extensoes do `pi`:
+
+- `test/helpers/mock-extension-api.ts`
+- `test/helpers/mock-command-context.ts`
+- `test/helpers/mock-extension-context.ts`
+- `test/helpers/mock-footer-data.ts`
+
+Eles cobrem o que uma extensao stateful normalmente precisa validar:
+
+- registro de command e tool
+- hooks de lifecycle
+- `appendEntry()`
+- `setStatus()` e `setFooter()`
+- painel `SettingsList`
+
+## Fluxo de release
+
+O repositorio inclui dois workflows:
+
+- `validate.yml`: roda `npm run check` em pushes e pull requests
+- `release.yml`: usa `release-please` para abrir/atualizar PRs de release e publica no npm quando uma release e criada
+
+Antes de publicar, confirme:
 
 ```bash
-npm run changelog
+npm run check
+npm run pack:check
 ```
 
-Generate release notes only:
-
-```bash
-npm run changelog:release
-```
-
-## Customize Before Publishing
+## Customize antes de publicar
 
 - `package.json`
   - `name`
@@ -126,14 +164,30 @@ npm run changelog:release
   - `bugs`
   - `homepage`
 - `src/types.ts`
-  - `STARTER_COMMAND_NAME`
+  - `STARTER_SETTINGS_COMMAND_NAME`
   - `STARTER_TOOL_NAME`
-  - `STARTER_INFO_MESSAGE_TYPE`
+  - `STARTER_SETTINGS_ENTRY_TYPE`
+  - defaults de `DEFAULT_STARTER_SESSION_SETTINGS`
 - `LICENSE`
   - copyright holder
 
-## Notes
+## Documentacao local
 
-- The package is intentionally source-first. There is no build step required for Pi to load the extension.
-- Runtime dependencies for distributed Pi packages must live in `dependencies`. This starter currently only needs peer dependencies and dev dependencies.
-- Husky installation is skipped automatically when `.git` is missing, which keeps `npm install` working before `git init`.
+Este starter trata os seguintes arquivos como contrato local de implementacao:
+
+- `AGENTS.md`
+- `docs/pi-guide-1-base.md`
+- `docs/pi-guide-2-runtime.md`
+- `docs/pi-guide-3-release.md`
+
+Eles foram derivados dos docs e exemplos oficiais do `pi` em:
+
+- `packages/coding-agent/docs/extensions.md`
+- `packages/coding-agent/docs/packages.md`
+- `packages/coding-agent/examples/extensions/README.md`
+
+## Notas
+
+- O pacote continua source-first. Nao existe build obrigatorio para o `pi` carregar a extensao.
+- Dependencias core do `pi` ficam em `peerDependencies` com `"*"`.
+- `@mariozechner/pi-ai` aparece no starter porque `StringEnum()` faz parte do padrao recomendado para enums de string.

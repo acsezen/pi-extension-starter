@@ -1,37 +1,37 @@
-# Guia de Criação de Extensões do Pi: Empacotamento e Validação
+# Guia de Criacao de Extensoes do Pi: Empacotamento e Validacao
 
-Este é o terceiro documento da série:
+Este e o terceiro documento da serie:
 
 - `docs/pi-guide-1-base.md`
 - `docs/pi-guide-2-runtime.md`
 - `docs/pi-guide-3-release.md`
 
-## Dependências
+## Dependencias
 
-Regras obrigatórias derivadas de `packages.md`:
+Regras obrigatorias derivadas de `packages.md`:
 
-- Dependências de runtime vão em `dependencies`
-- `devDependencies` não estarão disponíveis no runtime quando o pacote for instalado pelo `pi`
-- Pacotes core do `pi` devem ficar em `peerDependencies` com `"*"`:
-  - `@mariozechner/pi-ai`
-  - `@mariozechner/pi-agent-core`
-  - `@mariozechner/pi-coding-agent`
-  - `@mariozechner/pi-tui`
-  - `@sinclair/typebox`
+- dependencias de runtime vao em `dependencies`
+- `devDependencies` nao estarao disponiveis quando o pacote for instalado pelo `pi`
+- pacotes core do `pi` devem ficar em `peerDependencies` com `"*"`
 
-No starter atual:
+No starter atual, isso significa:
 
-- `peerDependencies` definem o contrato esperado com o host
-- `devDependencies` fixam versões para desenvolvimento local e testes
+- `@mariozechner/pi-agent-core`
+- `@mariozechner/pi-ai`
+- `@mariozechner/pi-coding-agent`
+- `@mariozechner/pi-tui`
+- `@sinclair/typebox`
 
-## Distribuição como Pi Package
+Como o codigo usa `StringEnum()`, `@mariozechner/pi-ai` tambem aparece em `devDependencies` para desenvolvimento local e testes.
 
-Para publicar como pacote compartilhável:
+## Distribuicao como Pi Package
 
-- inclua `keywords` com `pi-package`
+Para publicar como pacote compartilhavel:
+
+- mantenha `keywords` com `pi-package`
 - configure `package.json > pi.extensions`
 - mantenha `type: "module"`
-- garanta que o tarball contém apenas o necessário
+- inclua apenas o necessario no tarball
 
 Valide com:
 
@@ -39,40 +39,69 @@ Valide com:
 npm run pack:check
 ```
 
-Instalação local:
-
-```bash
-pi install .
-```
-
-Teste rápido sem instalar:
+Teste rapido sem instalar:
 
 ```bash
 pi -e ./src/index.ts
 ```
 
-## Checklist de Implementação
+Instalacao local como pacote:
 
-Antes de considerar uma extensão pronta:
+```bash
+pi install .
+```
 
-1. O pacote expõe `pi.extensions` apontando para `src/index.ts`.
-2. O código está modularizado entre `index`, `tools`, `commands` e tipos.
-3. Tools usam schema tipado.
-4. IDs públicos e tipos de `details` estão centralizados.
-5. Estado, se existir, sobrevive corretamente a `session_start`, `tree` e `fork`.
-6. Há teste unitário para registro e comportamento principal.
-7. `npm run check` passa.
-8. O smoke test `pi -e ./src/index.ts` foi ao menos considerado.
-9. `npm run pack:check` confirma que o pacote npm está limpo.
+## Checklist de implementacao
 
-## Anti-Padrões
+Antes de considerar uma extensao pronta:
+
+1. O pacote expoe `pi.extensions` apontando para `src/index.ts`.
+2. O codigo esta modularizado entre `index`, `commands`, `state`, `tools`, `ui` e `types`.
+3. Tools usam schema tipado com `TypeBox` e, quando fizer sentido, `StringEnum`.
+4. IDs publicos e contratos compartilhados estao centralizados.
+5. Estado de sessao usa `appendEntry()` e estado branch-aware usa `details`.
+6. Hooks de `session_start`, `session_tree` e `model_select` foram considerados.
+7. Ha teste para registro e comportamento principal.
+8. `npm run check` passa.
+9. O smoke test `pi -e ./src/index.ts` foi executado ou ao menos tentado.
+10. `npm run pack:check` confirma que o pacote npm esta limpo.
+
+## Automacao no GitHub
+
+O starter atual inclui:
+
+- `.github/workflows/validate.yml`
+  - roda `npm ci`
+  - executa `npm run check`
+  - valida pushes e pull requests em `main` e `master`
+
+- `.github/workflows/release.yml`
+  - usa `googleapis/release-please-action`
+  - abre ou atualiza PRs de release a partir de Conventional Commits
+  - quando uma release e criada, faz checkout da tag
+  - roda `npm run check`
+  - publica no npm com provenance
+
+Arquivos relacionados:
+
+- `release-please-config.json`
+- `.release-please-manifest.json`
+
+## Anti-padroes
 
 Evite:
 
-- exigir build para o `pi` conseguir rodar a extensão, sem necessidade concreta
-- colocar dependências de runtime em `devDependencies`
-- guardar estado importante só em variáveis de processo
-- misturar parsing pesado e side effects diretamente em `src/index.ts`
-- usar nomes de tool ou command temporários em release real
-- criar renderer verboso demais no modo colapsado
-- depender de UI sem fallback quando o código puder rodar fora do modo interativo
+- exigir build so para o `pi` conseguir carregar a extensao
+- colocar dependencias de runtime em `devDependencies`
+- guardar estado importante apenas em variaveis de processo
+- usar `appendEntry()` para tudo, inclusive estado que deveria viver em `details`
+- depender de UI sem fallback quando o codigo puder rodar em outros modos
+- manter ids temporarios do starter numa release publica
+
+## Entrega
+
+Quando a API publica do starter mudar:
+
+- atualize `README.md`
+- atualize `docs/pi-guide-*.md`
+- revise `AGENTS.md` para manter a lista de arquivos-base coerente
