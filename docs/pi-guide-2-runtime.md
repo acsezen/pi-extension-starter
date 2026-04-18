@@ -1,142 +1,142 @@
-# Guia de Criacao de Extensoes do Pi: Runtime e UI
+# Pi Extension Creation Guide: Runtime and UI
 
-Este e o segundo documento da serie:
+This is the second document in the series:
 
 - `docs/pi-guide-1-base.md`
 - `docs/pi-guide-2-runtime.md`
 - `docs/pi-guide-3-release.md`
 
-## Estado e reconstruicao
+## State and Reconstruction
 
-Se o comportamento depende de estado da sessao:
+If the behavior depends on session state:
 
-- prefira reconstruir a partir do historico persistido
-- use `session_start` e `session_tree` para reidratacao
-- use `model_select` quando a UI ou o comportamento depender do modelo atual
-- nao confie apenas em variaveis em memoria
+- prefer reconstructing from persisted history
+- use `session_start` and `session_tree` for rehydration
+- use `model_select` when UI or behavior depends on the current model
+- do not rely only on in-memory variables
 
-Exemplos canonicos:
+Canonical examples:
 
 - `todo.ts`
 - `tools.ts`
 - `model-status.ts`
 
-No starter atual:
+In the current starter:
 
-- `src/state/session-state.ts` reidrata configuracao de sessao a partir de `appendEntry()`
-- o mesmo modulo reconstroi o checklist a partir de `details` de `starter_checklist`
-- `src/index.ts` reaplica UI em `session_start`, `session_tree` e `model_select`
+- `src/state/session-state.ts` rehydrates session configuration from `appendEntry()`
+- the same module rebuilds the checklist from `starter_checklist` `details`
+- `src/index.ts` reapplies UI on `session_start`, `session_tree`, and `model_select`
 
 ## `appendEntry()` vs `details`
 
-Essa diferenca precisa ficar explicita em qualquer extensao stateful:
+This distinction needs to be explicit in any stateful extension:
 
-### Use `appendEntry()` quando:
+### Use `appendEntry()` when:
 
-- o dado for metadata de sessao
-- a extensao estiver persistindo preferencias do usuario
-- o estado nao precisar ser derivado de um resultado de tool especifico
+- the data is session metadata
+- the extension is persisting user preferences
+- the state does not need to be derived from a specific tool result
 
-### Use `details` quando:
+### Use `details` when:
 
-- o estado precisa acompanhar corretamente `fork`, `tree` e branching do historico
-- a renderizacao depende do resultado anterior da tool
-- a extensao precisa reconstruir o estado do branch atual lendo tool results
+- the state must correctly follow `fork`, `tree`, and history branching
+- rendering depends on the previous tool result
+- the extension needs to rebuild current-branch state by reading tool results
 
-No starter:
+In the starter:
 
-- `starter-settings-state` e gravado com `pi.appendEntry()`
-- o checklist do `starter_checklist` vive em `details`
+- `starter-settings-state` is written with `pi.appendEntry()`
+- the `starter_checklist` checklist lives in `details`
 
-## UI interativa
+## Interactive UI
 
-Quando a extensao precisa de um painel focado pelo usuario, o padrao recomendado e:
+When the extension needs a user-focused panel, the recommended pattern is:
 
 - `ctx.ui.custom()`
 - `SettingsList`
 - `getSettingsListTheme()`
 
-Exemplo canonicamente relevante: `tools.ts`.
+Canonically relevant example: `tools.ts`.
 
-No starter atual, `src/ui/settings-panel.ts` demonstra:
+In the current starter, `src/ui/settings-panel.ts` demonstrates:
 
-- titulo e resumo dinamico
-- `SettingsList` com busca
-- callback de mudanca aplicado imediatamente
-- re-render sem depender de hacks no command handler
+- dynamic title and summary
+- searchable `SettingsList`
+- change callback applied immediately
+- re-rendering without relying on command-handler hacks
 
-## Status e footer
+## Status and Footer
 
-O `pi` oferece dois niveis principais para UI persistente:
+`pi` offers two main levels for persistent UI:
 
 ### `ctx.ui.setStatus()`
 
-Use para um resumo curto e sempre disponivel.
+Use it for a short summary that is always available.
 
-Bom para:
+Good for:
 
-- estado ativo/inativo
-- modelo atual
-- contadores pequenos
+- active/inactive state
+- current model
+- small counters
 
 ### `ctx.ui.setFooter()`
 
-Use quando a extensao precisa substituir o footer inteiro.
+Use it when the extension needs to replace the entire footer.
 
-Bom para:
+Good for:
 
-- layout proprio
-- combinar dados de `ctx.sessionManager`, `ctx.model` e `footerData`
-- mostrar branch git e multiplos status ao mesmo tempo
+- custom layout
+- combining data from `ctx.sessionManager`, `ctx.model`, and `footerData`
+- showing the git branch and multiple statuses at the same time
 
-No starter atual, `src/ui/footer.ts` usa os dois:
+In the current starter, `src/ui/footer.ts` uses both:
 
-- `setStatus()` para o resumo compacto
-- `setFooter()` para um footer customizado quando o usuario escolhe esse modo no painel
+- `setStatus()` for the compact summary
+- `setFooter()` for a custom footer when the user selects that mode in the panel
 
-## Lifecycle minimo recomendado para extensoes stateful-ui
+## Minimal Recommended Lifecycle for `stateful-ui` Extensions
 
-Para extensoes com estado e UI, trate estes hooks como baseline:
+For extensions with state and UI, treat these hooks as the baseline:
 
 1. `session_start`
-   - reidrata estado
-   - reaplica status/footer/widget/header
+   - rehydrates state
+   - reapplies status/footer/widget/header
 
 2. `session_tree`
-   - reidrata estado do branch ativo
-   - reaplica a UI derivada desse branch
+   - rehydrates the active branch state
+   - reapplies the UI derived from that branch
 
 3. `model_select`
-   - sincroniza qualquer UI dependente de modelo
-   - em alguns casos, emite notify/status
+   - synchronizes any model-dependent UI
+   - in some cases, emits notify/status
 
-Esse trio esta presente no starter.
+This trio is present in the starter.
 
-## Renderizacao de tools
+## Tool Rendering
 
-Para tools:
+For tools:
 
-- use `renderCall()` e `renderResult()` quando a UX da TUI importar
-- mantenha o colapsado curto
-- use `expanded` para detalhar listas maiores
-- evite renderizadores muito verbosos
+- use `renderCall()` and `renderResult()` when TUI UX matters
+- keep the collapsed view short
+- use `expanded` to detail larger lists
+- avoid overly verbose renderers
 
-No starter:
+In the starter:
 
-- `src/tools/starter-checklist-tool.ts` usa `renderCall()` para mostrar acao + argumentos
-- `renderResult()` mostra um resumo enxuto e expande a lista quando necessario
+- `src/tools/starter-checklist-tool.ts` uses `renderCall()` to show action + arguments
+- `renderResult()` shows a concise summary and expands the list when needed
 
-## Testes de runtime
+## Runtime Tests
 
-Como o `pi` nao expoe um kit oficial de mocks para extensoes, o starter inclui helpers base em `test/helpers/`.
+Since `pi` does not expose an official mock kit for extensions, the starter includes base helpers in `test/helpers/`.
 
-Eles cobrem o que normalmente importa validar:
+They cover what usually matters to validate:
 
-- registro de command/tool/hooks
+- command/tool/hook registration
 - `appendEntry()`
 - `ctx.ui.custom()`
 - `ctx.ui.setStatus()`
 - `ctx.ui.setFooter()`
 - `sessionManager.getBranch()`
 
-Se uma extensao real crescer, prefira evoluir esses helpers em vez de reinventar mocks por pacote.
+If a real extension grows, prefer evolving these helpers instead of reinventing mocks per package.

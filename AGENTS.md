@@ -1,10 +1,10 @@
 # AGENTS
 
-## Objetivo
+## Objective
 
-Este repositório é um starter para criar extensões do `pi` como pacotes npm source-first.
+This repository is a starter for building `pi` extensions as source-first npm packages.
 
-Ao implementar novas funcionalidades aqui, trate os seguintes materiais como fonte de verdade:
+When implementing new features here, treat the following materials as the source of truth:
 
 - `docs/pi-guide-1-base.md`
 - `docs/pi-guide-2-runtime.md`
@@ -17,34 +17,34 @@ Ao implementar novas funcionalidades aqui, trate os seguintes materiais como fon
 - `src/ui/footer.ts`
 - `src/ui/settings-panel.ts`
 
-Os guias `docs/pi-guide-*.md` foram derivados dos materiais oficiais do `pi` em:
+The `docs/pi-guide-*.md` guides were derived from the official `pi` materials in:
 
 - `packages/coding-agent/docs/extensions.md`
 - `packages/coding-agent/docs/packages.md`
 - `packages/coding-agent/examples/extensions/README.md`
 
-## Regras para criar extensões do pi
+## Rules for Creating Pi Extensions
 
-- Mantenha o pacote source-first: o entrypoint principal deve continuar em TypeScript e listado em `package.json > pi.extensions`.
-- Prefira `defineTool()` para tools reutilizáveis e testáveis.
-- Use `@sinclair/typebox` para schemas e `StringEnum` de `@mariozechner/pi-ai` quando houver enum de strings compatível com providers Google.
-- Registre comandos com `pi.registerCommand("nome", { ... })`.
-- Para mensagens customizadas, use `pi.registerMessageRenderer()` junto de `pi.sendMessage()`.
-- Para UI interativa, prefira `ctx.ui.custom()` com `SettingsList` e `getSettingsListTheme()` quando o caso for configuracao ou toggles.
-- Reaplique comportamento derivado de estado em `session_start` e `session_tree`, e reaja a mudancas de modelo em `model_select` quando a extensao depender disso.
-- Use `ctx.ui.setStatus()` para resumo curto e `ctx.ui.setFooter()` quando precisar substituir o footer inteiro.
-- Se a extensão tiver estado que precisa sobreviver a `fork`, `tree` e reconstrução de sessão, persista em `details` de tool results ou em entradas de sessão, não em estado solto de processo apenas.
-- Dependências de runtime devem ir em `dependencies`. Dependências core do `pi` devem ficar em `peerDependencies` com `"*"`.
-- Não introduza etapa de build obrigatória para o `pi` carregar a extensão, a menos que exista motivo concreto.
+- Keep the package source-first: the main entrypoint must remain in TypeScript and be listed in `package.json > pi.extensions`.
+- Prefer `defineTool()` for reusable and testable tools.
+- Use `@sinclair/typebox` for schemas and `StringEnum` from `@mariozechner/pi-ai` when a string enum compatible with Google providers is needed.
+- Register commands with `pi.registerCommand("name", { ... })`.
+- For custom messages, use `pi.registerMessageRenderer()` together with `pi.sendMessage()`.
+- For interactive UI, prefer `ctx.ui.custom()` with `SettingsList` and `getSettingsListTheme()` when the use case is configuration or toggles.
+- Reapply state-derived behavior on `session_start` and `session_tree`, and react to model changes on `model_select` when the extension depends on that.
+- Use `ctx.ui.setStatus()` for a short summary and `ctx.ui.setFooter()` when you need to replace the entire footer.
+- If the extension has state that must survive `fork`, `tree`, and session reconstruction, persist it in tool result `details` or session entries, not only in loose process state.
+- Runtime dependencies must go in `dependencies`. Core `pi` dependencies must stay in `peerDependencies` with `"*"`.
+- Do not introduce a mandatory build step for `pi` to load the extension unless there is a concrete reason.
 
-## Qualidade
+## Quality
 
-- Após alterações que não sejam somente documentação, rode `npm run check`.
-- Para validar o fluxo real da extensão, use também `pi -e ./src/index.ts`.
-- Antes de publicar, confirme `npm run pack:check`.
+- After changes that are not documentation-only, run `npm run check`.
+- To validate the real extension flow, also use `pi -e ./src/index.ts`.
+- Before publishing, confirm `npm run pack:check`.
 
-## Entrega
+## Delivery
 
-- Atualize `README.md` quando a API pública da extensão mudar.
-- Atualize `docs/pi-guide-*.md` quando novas decisões de arquitetura ou padrões do `pi` forem incorporados ao starter.
-- Atualize este `AGENTS.md` quando os arquivos-base do starter mudarem.
+- Update `README.md` when the extension's public API changes.
+- Update `docs/pi-guide-*.md` when new architecture decisions or `pi` patterns are incorporated into the starter.
+- Update this `AGENTS.md` when the starter's baseline files change.

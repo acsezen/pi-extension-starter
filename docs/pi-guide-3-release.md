@@ -1,20 +1,20 @@
-# Guia de Criacao de Extensoes do Pi: Empacotamento e Validacao
+# Pi Extension Creation Guide: Packaging and Validation
 
-Este e o terceiro documento da serie:
+This is the third document in the series:
 
 - `docs/pi-guide-1-base.md`
 - `docs/pi-guide-2-runtime.md`
 - `docs/pi-guide-3-release.md`
 
-## Dependencias
+## Dependencies
 
-Regras obrigatorias derivadas de `packages.md`:
+Mandatory rules derived from `packages.md`:
 
-- dependencias de runtime vao em `dependencies`
-- `devDependencies` nao estarao disponiveis quando o pacote for instalado pelo `pi`
-- pacotes core do `pi` devem ficar em `peerDependencies` com `"*"`
+- runtime dependencies go in `dependencies`
+- `devDependencies` will not be available when the package is installed by `pi`
+- core `pi` packages must stay in `peerDependencies` with `"*"`
 
-No starter atual, isso significa:
+In the current starter, that means:
 
 - `@mariozechner/pi-agent-core`
 - `@mariozechner/pi-ai`
@@ -22,86 +22,77 @@ No starter atual, isso significa:
 - `@mariozechner/pi-tui`
 - `@sinclair/typebox`
 
-Como o codigo usa `StringEnum()`, `@mariozechner/pi-ai` tambem aparece em `devDependencies` para desenvolvimento local e testes.
+Because the code uses `StringEnum()`, `@mariozechner/pi-ai` also appears in `devDependencies` for local development and tests.
 
-## Distribuicao como Pi Package
+## Distribution as a Pi Package
 
-Para publicar como pacote compartilhavel:
+To publish as a shareable package:
 
-- mantenha `keywords` com `pi-package`
+- keep `keywords` with `pi-package`
 - configure `package.json > pi.extensions`
-- mantenha `type: "module"`
-- inclua apenas o necessario no tarball
+- keep `type: "module"`
+- include only what is necessary in the tarball
 
-Valide com:
+Validate with:
 
 ```bash
 npm run pack:check
 ```
 
-Teste rapido sem instalar:
+Quick test without installing:
 
 ```bash
 pi -e ./src/index.ts
 ```
 
-Instalacao local como pacote:
+Local installation as a package:
 
 ```bash
 pi install .
 ```
 
-## Checklist de implementacao
+## Implementation Checklist
 
-Antes de considerar uma extensao pronta:
+Before considering an extension ready:
 
-1. O pacote expoe `pi.extensions` apontando para `src/index.ts`.
-2. O codigo esta modularizado entre `index`, `commands`, `state`, `tools`, `ui` e `types`.
-3. Tools usam schema tipado com `TypeBox` e, quando fizer sentido, `StringEnum`.
-4. IDs publicos e contratos compartilhados estao centralizados.
-5. Estado de sessao usa `appendEntry()` e estado branch-aware usa `details`.
-6. Hooks de `session_start`, `session_tree` e `model_select` foram considerados.
-7. Ha teste para registro e comportamento principal.
-8. `npm run check` passa.
-9. O smoke test `pi -e ./src/index.ts` foi executado ou ao menos tentado.
-10. `npm run pack:check` confirma que o pacote npm esta limpo.
+1. The package exposes `pi.extensions` pointing to `src/index.ts`.
+2. The code is modularized across `index`, `commands`, `state`, `tools`, `ui`, and `types`.
+3. Tools use typed schemas with `TypeBox` and, when appropriate, `StringEnum`.
+4. Public IDs and shared contracts are centralized.
+5. Session state uses `appendEntry()` and branch-aware state uses `details`.
+6. `session_start`, `session_tree`, and `model_select` hooks were considered.
+7. There are tests for registration and main behavior.
+8. `npm run check` passes.
+9. The smoke test `pi -e ./src/index.ts` was run or at least attempted.
+10. `npm run pack:check` confirms the npm package is clean.
 
-## Automacao no GitHub
+## GitHub Automation
 
-O starter atual inclui:
+The current starter includes:
 
-- `.github/workflows/validate.yml`
-  - roda `npm ci`
-  - executa `npm run check`
-  - valida pushes e pull requests em `main` e `master`
+- `.github/workflows/validate.yml`: runs `npm ci`, executes `npm run check`, and validates pushes and pull requests on `main` and `master`
+- `.github/workflows/release.yml`: uses `googleapis/release-please-action`, opens or updates release PRs from Conventional Commits, checks out the tag when a release is created, runs `npm run check`, and publishes to npm with provenance
 
-- `.github/workflows/release.yml`
-  - usa `googleapis/release-please-action`
-  - abre ou atualiza PRs de release a partir de Conventional Commits
-  - quando uma release e criada, faz checkout da tag
-  - roda `npm run check`
-  - publica no npm com provenance
-
-Arquivos relacionados:
+Related files:
 
 - `release-please-config.json`
 - `.release-please-manifest.json`
 
-## Anti-padroes
+## Anti-Patterns
 
-Evite:
+Avoid:
 
-- exigir build so para o `pi` conseguir carregar a extensao
-- colocar dependencias de runtime em `devDependencies`
-- guardar estado importante apenas em variaveis de processo
-- usar `appendEntry()` para tudo, inclusive estado que deveria viver em `details`
-- depender de UI sem fallback quando o codigo puder rodar em outros modos
-- manter ids temporarios do starter numa release publica
+- requiring a build only so `pi` can load the extension
+- putting runtime dependencies in `devDependencies`
+- storing important state only in process variables
+- using `appendEntry()` for everything, including state that should live in `details`
+- depending on UI without fallback when the code may run in other modes
+- keeping temporary starter IDs in a public release
 
-## Entrega
+## Delivery
 
-Quando a API publica do starter mudar:
+When the starter's public API changes:
 
-- atualize `README.md`
-- atualize `docs/pi-guide-*.md`
-- revise `AGENTS.md` para manter a lista de arquivos-base coerente
+- update `README.md`
+- update `docs/pi-guide-*.md`
+- review `AGENTS.md` to keep the baseline file list consistent

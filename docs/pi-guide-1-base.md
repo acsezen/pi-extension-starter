@@ -1,55 +1,49 @@
-# Guia de Criacao de Extensoes do Pi: Fundamentos
+# Pi Extension Creation Guide: Fundamentals
 
-Este guia existe para orientar agentes e mantenedores deste starter a criarem extensoes do `pi` da forma recomendada pela documentacao e pelos exemplos reais do projeto.
+This guide exists to help agents and maintainers of this starter build `pi` extensions in the way recommended by the documentation and the project's real examples.
 
-## Escopo da serie
+## Series Scope
 
-Este material foi dividido em 3 arquivos:
+This material is split across 3 files:
 
 - `docs/pi-guide-1-base.md`
 - `docs/pi-guide-2-runtime.md`
 - `docs/pi-guide-3-release.md`
 
-## Fontes de verdade
+## Sources of Truth
 
-Este documento foi consolidado a partir de:
+This document was consolidated from:
 
 - `packages/coding-agent/docs/extensions.md`
 - `packages/coding-agent/docs/packages.md`
 - `packages/coding-agent/examples/extensions/README.md`
-- exemplos canonicamente uteis:
-  - `packages/coding-agent/examples/extensions/hello.ts`
-  - `packages/coding-agent/examples/extensions/todo.ts`
-  - `packages/coding-agent/examples/extensions/tools.ts`
-  - `packages/coding-agent/examples/extensions/status-line.ts`
-  - `packages/coding-agent/examples/extensions/custom-footer.ts`
-  - `packages/coding-agent/examples/extensions/model-status.ts`
+- canonically useful examples: `packages/coding-agent/examples/extensions/hello.ts`, `packages/coding-agent/examples/extensions/todo.ts`, `packages/coding-agent/examples/extensions/tools.ts`, `packages/coding-agent/examples/extensions/status-line.ts`, `packages/coding-agent/examples/extensions/custom-footer.ts`, `packages/coding-agent/examples/extensions/model-status.ts`
 
-Quando houver conflito, priorize primeiro `extensions.md` e `packages.md`, depois os exemplos.
+When there is a conflict, prioritize `extensions.md` and `packages.md` first, then the examples.
 
-## Perfis recomendados
+## Recommended Profiles
 
-Os exemplos oficiais do `pi` mostram dois perfis comuns:
+The official `pi` examples show two common profiles:
 
 1. `minimal`
-   - extensoes pequenas
-   - normalmente um unico tool ou hook
-   - inspiracao principal: `hello.ts`
+   - small extensions
+   - usually a single tool or hook
+   - main inspiration: `hello.ts`
 
 2. `stateful-ui`
-   - extensoes com command, configuracao, estado, UI e reidratacao
-   - inspiracao principal: `tools.ts`, `todo.ts`, `status-line.ts`, `custom-footer.ts`
+   - extensions with command, configuration, state, UI, and rehydration
+   - main inspiration: `tools.ts`, `todo.ts`, `status-line.ts`, `custom-footer.ts`
 
-Este repositorio usa `stateful-ui` como baseline do starter principal.
+This repository uses `stateful-ui` as the baseline for the main starter.
 
-## Modelo recomendado
+## Recommended Model
 
-- extensoes do `pi` sao modulos TypeScript carregados diretamente pelo runtime
-- o formato recomendado para distribuicao e um pacote npm ou git com manifesto `pi` em `package.json`
-- o pacote deve permanecer source-first
-- o entrypoint principal deve continuar em `package.json > pi.extensions`
+- `pi` extensions are TypeScript modules loaded directly by the runtime
+- the recommended distribution format is an npm or git package with a `pi` manifest in `package.json`
+- the package should remain source-first
+- the main entrypoint should remain in `package.json > pi.extensions`
 
-Exemplo minimo:
+Minimal example:
 
 ```json
 {
@@ -61,16 +55,16 @@ Exemplo minimo:
 }
 ```
 
-## Estrutura recomendada
+## Recommended Structure
 
-Para extensoes pequenas:
+For small extensions:
 
 ```text
 src/
   index.ts
 ```
 
-Para extensoes reais e evolutivas:
+For real and evolving extensions:
 
 ```text
 src/
@@ -85,7 +79,7 @@ test/
 docs/
 ```
 
-No starter atual, a estrutura recomendada ja aparece de forma concreta:
+In the current starter, the recommended structure already appears in a concrete form:
 
 ```text
 src/
@@ -98,21 +92,21 @@ src/
   types.ts
 ```
 
-Regras praticas:
+Practical rules:
 
-- `src/index.ts` deve compor o registro da extensao, nao concentrar a logica inteira
-- `commands/` para slash commands
-- `state/` para reidratacao, persistencia e estado em memoria
-- `tools/` para tools reutilizaveis e testaveis
-- `ui/` para renderizacao interativa, footer, status e componentes auxiliares
-- `types.ts` para ids publicos, defaults e contratos compartilhados
-- `test/helpers/` para mocks de `ExtensionAPI`, contexto, `sessionManager` e footer
+- `src/index.ts` should compose extension registration, not contain all logic
+- `commands/` for slash commands
+- `state/` for rehydration, persistence, and in-memory state
+- `tools/` for reusable and testable tools
+- `ui/` for interactive rendering, footer, status, and helper components
+- `types.ts` for public IDs, defaults, and shared contracts
+- `test/helpers/` for mocks of `ExtensionAPI`, context, `sessionManager`, and footer
 
-## Como escrever a extensao
+## How to Write the Extension
 
-Toda extensao exporta uma funcao default que recebe `ExtensionAPI`.
+Every extension exports a default function that receives `ExtensionAPI`.
 
-Padrao recomendado:
+Recommended pattern:
 
 ```ts
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
@@ -129,11 +123,11 @@ export default function myExtension(pi: ExtensionAPI): void {
 
 ## Tools
 
-### Padrao preferido
+### Preferred Pattern
 
-Prefira `defineTool()` para tools declarados fora de `registerTool()`. Isso preserva inferencia de tipos, facilita teste unitario e reutilizacao.
+Prefer `defineTool()` for tools declared outside `registerTool()`. This preserves type inference and makes unit testing and reuse easier.
 
-Exemplo de referencia: `hello.ts`.
+Reference example: `hello.ts`.
 
 ```ts
 import { defineTool } from "@mariozechner/pi-coding-agent";
@@ -161,35 +155,35 @@ export const myTool = defineTool({
 
 ### Schemas
 
-- use `@sinclair/typebox` para schemas
-- para enums de string, prefira `StringEnum` de `@mariozechner/pi-ai`
-- evite unions manuais de literais quando `StringEnum` resolver o caso
+- use `@sinclair/typebox` for schemas
+- for string enums, prefer `StringEnum` from `@mariozechner/pi-ai`
+- avoid manual literal unions when `StringEnum` covers the use case
 
 ## Commands
 
-Padrao recomendado:
+Recommended pattern:
 
-- registrar via `pi.registerCommand("nome", { description, handler })`
-- manter parsing de `args` explicito
-- usar `ctx.ui.custom()` quando precisar de interacao rica
-- usar `ctx.ui.notify()` para feedback leve
+- register via `pi.registerCommand("name", { description, handler })`
+- keep `args` parsing explicit
+- use `ctx.ui.custom()` when rich interaction is needed
+- use `ctx.ui.notify()` for lightweight feedback
 
-No starter atual, o command principal abre um `SettingsList` e persiste configuracoes com atualizacao imediata.
+In the current starter, the main command opens a `SettingsList` and persists configuration with immediate updates.
 
-## Estado
+## State
 
-Use dois canais diferentes, cada um com uma responsabilidade:
+Use two different channels, each with a distinct responsibility:
 
 1. `pi.appendEntry()`
-   - metadados de sessao
-   - preferencias do usuario
-   - configuracoes que nao dependem do resultado de um tool especifico
+   - session metadata
+   - user preferences
+   - configuration that does not depend on the result of a specific tool
 
-2. `details` de tool results
-   - estado que precisa seguir corretamente o branch atual
-   - dados de renderizacao e reidratacao ligados ao historico da tool
+2. tool result `details`
+   - state that must correctly follow the current branch
+   - rendering and rehydration data tied to the tool history
 
-O starter atual usa exatamente essa divisao:
+The current starter uses exactly this split:
 
-- configuracao da UI em `appendEntry()`
-- checklist do tool em `details`
+- UI configuration in `appendEntry()`
+- tool checklist in `details`
