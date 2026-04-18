@@ -1,20 +1,20 @@
 # pi-extension-starter
 
-Starter template para criar extensoes do `pi` como pacotes npm source-first, agora com um perfil base mais proximo de extensoes reais: estado de sessao, UI interativa, hooks de lifecycle e um tool com `details` branch-aware.
+Starter template for building `pi` extensions as source-first npm packages, now with a baseline profile closer to real extensions: session state, interactive UI, lifecycle hooks, and a tool with branch-aware `details`.
 
-## O que este starter demonstra
+## What This Starter Demonstrates
 
-- `package.json > pi.extensions` apontando para `./src/index.ts`
-- `src/state/session-state.ts` com persistencia via `pi.appendEntry()`
-- `src/tools/starter-checklist-tool.ts` com `defineTool()` e `details` tipados para reconstruir estado por branch
-- `src/commands/settings-command.ts` com `ctx.ui.custom()` + `SettingsList` + `getSettingsListTheme()`
-- `src/ui/footer.ts` com `ctx.ui.setStatus()` e `ctx.ui.setFooter()`
-- hooks `session_start`, `session_tree` e `model_select`
-- helpers de teste em `test/helpers/`
-- validacao local com `npm run check`
-- release automatizado com `release-please` + publish no npm
+- `package.json > pi.extensions` pointing to `./src/index.ts`
+- `src/state/session-state.ts` with persistence via `pi.appendEntry()`
+- `src/tools/starter-checklist-tool.ts` with `defineTool()` and typed `details` to rebuild state per branch
+- `src/commands/settings-command.ts` with `ctx.ui.custom()` + `SettingsList` + `getSettingsListTheme()`
+- `src/ui/footer.ts` with `ctx.ui.setStatus()` and `ctx.ui.setFooter()`
+- `session_start`, `session_tree`, and `model_select` hooks
+- test helpers in `test/helpers/`
+- local validation with `npm run check`
+- automated releases with `release-please` + npm publish
 
-## Estrutura atual
+## Current Structure
 
 ```text
 src/
@@ -42,119 +42,119 @@ docs/
   pi-guide-3-release.md
 ```
 
-## Comportamento do starter
+## Starter Behavior
 
 - Slash command: `/starter-settings`
 - Tool name: `starter_checklist`
 - Session entry type: `starter-settings-state`
 
-O command abre um painel `SettingsList` para alternar configuracoes persistidas.
-O tool mantem um checklist simples e grava o estado em `details`, o que torna a reconstruicao correta em `fork`, `tree` e recarga de sessao.
-Os hooks reaplicam status/footer e sincronizam o estado em memoria quando a sessao muda.
+The command opens a `SettingsList` panel to toggle persisted settings.
+The tool maintains a simple checklist and stores its state in `details`, which makes reconstruction correct across `fork`, `tree`, and session reloads.
+The hooks reapply status/footer and synchronize in-memory state when the session changes.
 
 ## Quick Start
 
-1. Ajuste os metadados do pacote em `package.json`.
-2. Renomeie os identificadores publicos em `src/types.ts`.
-3. Instale dependencias:
+1. Update the package metadata in `package.json`.
+2. Rename the public identifiers in `src/types.ts`.
+3. Install dependencies:
 
    ```bash
    npm install
    ```
 
-4. Rode a validacao completa:
+4. Run the full validation:
 
    ```bash
    npm run check
    ```
 
-5. Rode um smoke test com o runtime real do `pi`:
+5. Run a smoke test with the real `pi` runtime:
 
    ```bash
    pi -e ./src/index.ts
    ```
 
-6. Opcionalmente teste a instalacao local como pacote:
+6. Optionally test local installation as a package:
 
    ```bash
    pi install .
    ```
 
-## Padroes de arquitetura incluidos
+## Included Architecture Patterns
 
-### 1. Estado de sessao via `appendEntry()`
+### 1. Session State via `appendEntry()`
 
-`src/state/session-state.ts` persiste preferencias do usuario como:
+`src/state/session-state.ts` persists user preferences such as:
 
-- modo de workflow
-- modo do footer
-- notificacoes de troca de modelo
+- workflow mode
+- footer mode
+- model-switch notifications
 
-Esses dados sao metadados de sessao. Por isso o starter usa `pi.appendEntry()` e reidrata no `session_start` e no `session_tree`.
+This data is session metadata. That is why the starter uses `pi.appendEntry()` and rehydrates it on `session_start` and `session_tree`.
 
-### 2. Estado branch-aware via `details`
+### 2. Branch-Aware State via `details`
 
-`src/tools/starter-checklist-tool.ts` devolve `details` estruturados em cada resultado.
-O starter usa esse historico para reconstruir o checklist do branch atual, sem depender de estado solto de processo.
+`src/tools/starter-checklist-tool.ts` returns structured `details` in each result.
+The starter uses that history to rebuild the current branch checklist without depending on loose process state.
 
-### 3. UI interativa oficial
+### 3. Official Interactive UI
 
-`src/commands/settings-command.ts` abre um painel com:
+`src/commands/settings-command.ts` opens a panel with:
 
 - `ctx.ui.custom()`
 - `SettingsList`
 - `getSettingsListTheme()`
-- atualizacao imediata ao alternar opcoes
+- immediate updates when toggling options
 
-### 4. Lifecycle explicito
+### 4. Explicit Lifecycle
 
-`src/index.ts` registra:
+`src/index.ts` registers:
 
 - `session_start`
 - `session_tree`
 - `model_select`
 
-Isso mostra como reaplicar comportamento depois de reload, branch navigation e troca de modelo.
+This shows how to reapply behavior after reloads, branch navigation, and model changes.
 
-### 5. Status e footer
+### 5. Status and Footer
 
-`src/ui/footer.ts` demonstra:
+`src/ui/footer.ts` demonstrates:
 
-- `ctx.ui.setStatus()` para status compacto e persistente
-- `ctx.ui.setFooter()` para um footer customizado que usa `footerData`
+- `ctx.ui.setStatus()` for compact, persistent status
+- `ctx.ui.setFooter()` for a custom footer that uses `footerData`
 
-## Testes incluidos
+## Included Tests
 
-O starter agora inclui mocks reutilizaveis para extensoes do `pi`:
+The starter now includes reusable mocks for `pi` extensions:
 
 - `test/helpers/mock-extension-api.ts`
 - `test/helpers/mock-command-context.ts`
 - `test/helpers/mock-extension-context.ts`
 - `test/helpers/mock-footer-data.ts`
 
-Eles cobrem o que uma extensao stateful normalmente precisa validar:
+They cover what a stateful extension usually needs to validate:
 
-- registro de command e tool
-- hooks de lifecycle
+- command and tool registration
+- lifecycle hooks
 - `appendEntry()`
-- `setStatus()` e `setFooter()`
-- painel `SettingsList`
+- `setStatus()` and `setFooter()`
+- `SettingsList` panel
 
-## Fluxo de release
+## Release Flow
 
-O repositorio inclui dois workflows:
+The repository includes two workflows:
 
-- `validate.yml`: roda `npm run check` em pushes e pull requests
-- `release.yml`: usa `release-please` para abrir/atualizar PRs de release e publica no npm quando uma release e criada
+- `validate.yml`: runs `npm run check` on pushes and pull requests
+- `release.yml`: uses `release-please` to open/update release PRs and publishes to npm when a release is created
 
-Antes de publicar, confirme:
+Before publishing, confirm:
 
 ```bash
 npm run check
 npm run pack:check
 ```
 
-## Customize antes de publicar
+## Customize Before Publishing
 
 - `package.json`
   - `name`
@@ -167,27 +167,27 @@ npm run pack:check
   - `STARTER_SETTINGS_COMMAND_NAME`
   - `STARTER_TOOL_NAME`
   - `STARTER_SETTINGS_ENTRY_TYPE`
-  - defaults de `DEFAULT_STARTER_SESSION_SETTINGS`
+  - defaults for `DEFAULT_STARTER_SESSION_SETTINGS`
 - `LICENSE`
   - copyright holder
 
-## Documentacao local
+## Local Documentation
 
-Este starter trata os seguintes arquivos como contrato local de implementacao:
+This starter treats the following files as the local implementation contract:
 
 - `AGENTS.md`
 - `docs/pi-guide-1-base.md`
 - `docs/pi-guide-2-runtime.md`
 - `docs/pi-guide-3-release.md`
 
-Eles foram derivados dos docs e exemplos oficiais do `pi` em:
+They were derived from the official `pi` docs and examples in:
 
 - `packages/coding-agent/docs/extensions.md`
 - `packages/coding-agent/docs/packages.md`
 - `packages/coding-agent/examples/extensions/README.md`
 
-## Notas
+## Notes
 
-- O pacote continua source-first. Nao existe build obrigatorio para o `pi` carregar a extensao.
-- Dependencias core do `pi` ficam em `peerDependencies` com `"*"`.
-- `@mariozechner/pi-ai` aparece no starter porque `StringEnum()` faz parte do padrao recomendado para enums de string.
+- The package remains source-first. There is no mandatory build step for `pi` to load the extension.
+- Core `pi` dependencies stay in `peerDependencies` with `"*"`.
+- `@mariozechner/pi-ai` appears in the starter because `StringEnum()` is part of the recommended pattern for string enums.
