@@ -10,8 +10,8 @@
 
 ## Testing
 
-- [ ] `bun run build`
-- [ ] `bun run smoke`
+- [ ] `describe`
+- [ ] `describe`
 - [ ] focused tests:
 
 ## Notes
